@@ -1,9 +1,11 @@
-#install.packages("stringr")
+install.packages("hrbrthemes")
 library(tidyverse)
 library(magrittr)
 library(ggplot2)
 library(stringr)
 library(lubridate)
+library(hrbrthemes)
+library(ggplot2)
 
 data <- read.csv("C:/Users/Amit/Desktop/MS in Data Science/Sem4/Data  Wrangling/Project/NJ Data/Combined_data.csv")
 
@@ -11,8 +13,6 @@ df1 <- data
 
 #sample of data
 head(df1,30)
-
-
 
 
 #changing column names
@@ -27,6 +27,10 @@ df1 <- df1 %>% select("trip_duration","start_time","start_stn_id","start_stn_nam
 df1$start_stn_name = as.character(df1$start_stn_name)
 df1$end_stn_name = as.character(df1$end_stn_name)
 
+df1 %>% group_by(user_type) %>% summarise(n = n())
+
+df1 %>% group_by(user_type) %>% summarise(n = n()) %>% ggplot(aes(x=user_type, y=n)) + 
+  geom_bar(stat = "identity")
 
 ##Since start time is in format 2019-01-01 03:09:09.7110 we will seperate start_time into start_date and start_time
 df1 <- df1 %>% separate(start_time,c("start_date","start_time"),sep = " ")
@@ -36,6 +40,64 @@ df1$start_date  <- ymd(df1$start_date)
 #df1$start_date <- as.Date(df1$start_date,"%Y-%m-%d")
 
 ?as.Date
+
+############# Age-Wise distribution of data
+
+Age_df <- df1
+typeof(Age_df$birth_year)
+Age_df <- Age_df %>% mutate(Age = 2020 - Age_df$birth_year)
+
+Age_plot <- ggplot(Age_df, aes(x=Age)) + 
+  geom_histogram(color = "black",fill = "steelblue")+
+  scale_x_continuous(breaks=seq(0,200,10)) + ggtitle("Distribution of Trip Times") + 
+  xlab("Age") +
+  ylab("Number of Trips")
+
+############
+
+######### Age Pie chart
+
+Age_df_cat <- Age_df %>% mutate(Age_group =  
+  case_when(
+  (Age >= 17 & Age < 25) ~ 1,
+  (Age >= 25 & Age < 35) ~ 2,
+  (Age >= 35 & Age < 45) ~ 3,
+  (Age >= 45 & Age < 55) ~ 4,
+  TRUE ~ 5
+))
+
+class(Age_df_cat$Age_group)
+Age_df_cat$Age_group <- as.factor(Age_df_cat$Age_group)
+
+#total_count <- nrow(Age_df_cat)
+#group_count <- Age_df_cat %>% group_by(Age_group) %>% summarise(n = n())
+#group_count <- group_count %>% mutate(Percentage = 100*n/total_count)
+
+
+
+
+
+
+
+total_count <- Age_df_cat %>% filter(gender == 1 | gender == 2) %>% nrow()
+
+group_data <-Age_df_cat %>% filter(gender == 1 | gender == 2) %>% group_by(gender,Age_group) %>% summarise(n = n())
+
+group_data <- group_data %>% mutate(percent = n/total_count*100)
+
+group_data$gender[group_data$gender == 1] <- "Male"
+group_data$gender[group_data$gender == 2] <- "Female"
+
+Age_df_cat$gender <- as.factor(Age_df_cat$gender)
+
+basic <- ggplot(group_data, aes(fill=gender, y=percent, x=Age_group)) + 
+  geom_bar(position="stack", stat="identity") + labs(gender = "Gender")
+
+
+basic + scale_x_discrete(labels=c("1" = "17-24", "2" = "25-34", "3" = "35-44", "4" = "45-54", "5" = "55 and up"))
+########
+
+##########
 
 plot2 <- df1 %>% group_by(start_date) %>% summarise(total_trips = n()) %>% ggplot(aes(x = start_date,y = total_trips)) + 
     geom_line(color="darkorange") + xlab("") + geom_smooth(color = "steelblue") + xlab("TimeLine")+ylab("Total Trips") 
@@ -140,5 +202,52 @@ plot3
   
 ##########
 
-df1 %>% select(trip_duration) %>% mutate(trip_in_mins = trip_duration/60)
+######## Distribution of tripduration
+
+trip_time_min <- df1 %>% select(trip_duration) %>% mutate(trip_in_mins = trip_duration/60)
+
+(trip_time_min[trip_time_min$trip_in_mins < 40,]) %>% ggplot(aes(x = trip_in_mins)) + geom_histogram(binwidth = 1,color = "black",fill = "steelblue") +
+  scale_x_continuous(breaks=seq(0,40,1)) + ggtitle("Distribution of Trip Times") + xlab("Trip Duration(minutes)") +
+  ylab("Number of Trips")
+
+nrow(trip_time_min[trip_time_min$trip_in_mins < 40,])
+
+##only 10000 trips and more than 60 mins so we are not considering it for plotting the graph
+404947 - 394600
+
+######
+
+######### Effect of weather on temprature 
+weather <- final_combined_weather_data
+
+weather <- weather %>% select(data.weather.date,data.weather.avgtempF)
+
+weather$data.weather.date  <- ymd(weather$data.weather.date)
+
+
+
+df1_with_weather <- inner_join(df1,weather, by= c("start_date"="data.weather.date"))
+
+df1_with_weather$data.weather.avgtempF <- as.numeric(df1_with_weather$data.weather.avgtempF)
+
+df1_with_weather %>% ggplot(aes(x = data.weather.avgtempF)) + 
+  geom_density(fill="#69b3a2", color="#e9ecef", alpha=0.8) +
+  ggtitle("Effect of weather on bike trips") + xlab("Avg. Temprature") + 
+  theme_ipsum()
+
+######
+
+########Another effect of weather on temprature
+df3 <- df1_with_weather %>% group_by(start_date) %>% summarise(n = n())
+df3 <- inner_join(df3,weather,by= c("start_date"="data.weather.date"))
+#############
+
+
+###########
+
+cor(df3$n,as.numeric(df3$data.weather.avgtempF))
+
+##########
+
+
 
