@@ -55,7 +55,7 @@ Age_plot <- ggplot(Age_df, aes(x=Age)) +
 
 ############
 
-######### Age Pie chart
+######### Age-group wise Pie chart
 
 Age_df_cat <- Age_df %>% mutate(Age_group =  
   case_when(
