@@ -9,10 +9,9 @@ library(jsonlite)
 api.key <- "65125913f8a8445c851190650201604"
   
 
-# url1 <- paste0(
-#   "http://api.worldweatheronline.com/premium/v1/past-weather.ashx?key=", 
-#   api.key, "&q=Jersey%20City&format=json&date=2019-01-01&enddate=2019-01-31&includelocation=yes&tp=24"
-# )
+ url1 <- paste0(
+   "http://api.worldweatheronline.com/premium/v1/past-weather.ashx?key=", 
+a )
 # 
 # url2 <- paste0(
 #   "http://api.worldweatheronline.com/premium/v1/past-weather.ashx?key=", 
@@ -71,7 +70,7 @@ api.key <- "65125913f8a8445c851190650201604"
 # 
 # 
 # 
-# month1 <- url1 %>% fromJSON() %>% as.data.frame()
+ month1 <- url1 %>% fromJSON() %>% as.data.frame()
 # month2 <- url2 %>% fromJSON() %>% as.data.frame()
 # month3 <- url3 %>% fromJSON() %>% as.data.frame()
 # month4 <- url4 %>% fromJSON() %>% as.data.frame()
@@ -96,7 +95,8 @@ create_weather_data <- function(api.key,li =  c(31,28,31,30,31,30,31,31,30,31,30
   for(i in c(1:9))
   {
     url <- paste0("http://api.worldweatheronline.com/premium/v1/past-weather.ashx?key=",
-                  api.key,"&q=Jersey%20City&format=json&date=2019-0",i,"-01&enddate=2019-0",i,"-",li[i],"&includelocation=yes&tp=24")
+                  api.key,"&q=Jersey%20City&format=json&date=2019-0",i,"-01&enddate=2019-0",i,
+                  "-",li[i],"&includelocation=yes&tp=24")
     temp <- url %>% fromJSON() %>% as.data.frame()
     datalist[[i]] = temp
       
@@ -104,7 +104,8 @@ create_weather_data <- function(api.key,li =  c(31,28,31,30,31,30,31,31,30,31,30
   for(i in c(10:12))
   {
     url <- paste0("http://api.worldweatheronline.com/premium/v1/past-weather.ashx?key=",
-                  api.key,"&q=Jersey%20City&format=json&date=2019-",i,"-01&enddate=2019-",i,"-",li[i],"&includelocation=yes&tp=24")
+                  api.key,"&q=Jersey%20City&format=json&date=2019-",i,"-01&enddate=2019-",
+                  i,"-",li[i],"&includelocation=yes&tp=24")
     temp <- url %>% fromJSON() %>% as.data.frame()
     datalist[[i]] = temp
     
@@ -129,3 +130,10 @@ weather_data_created_by_function <- do.call(rbind,create_weather_data(api.key))
 # 
 # url <- paste0("http://api.worldweatheronline.com/premium/v1/past-weather.ashx?key=",
 #        api.key,"&q=Jersey%20City&format=json&date=2019-0",2,"-01&enddate=2019-0",2,"-",28,"&includelocation=yes&tp=24")
+
+
+weather_data_created_by_function['data.weather.hourly'][[1]][[1]][['precipMM']]
+
+
+
+weather_data_created_by_function

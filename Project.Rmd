@@ -1,0 +1,460 @@
+---
+title: "Project"
+author: "Amit Patil"
+date: "5/3/2020"
+output:
+  word_document: default
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(httr)
+library(curl)
+library(RCurl)
+library(jsonlite)
+library(magrittr)
+library(ggplot2)
+library(stringr)
+library(lubridate)
+library(hrbrthemes)
+library(ggplot2)
+api.key <- "65125913f8a8445c851190650201604"
+```
+
+## Introduction
+Public transportation has increased tremendously in the past few years in urban areas asa  result  of  increasing  environmental,  economic  and  energy  issues.   Public  Bike  sharingsystems are one of them which have become increasingly popular and have a growingpresence in the past decade.  A Bike sharing system is a service in which bikes are madeavailable for shared use to individuals on a short-term basis for a price. Many bike sharingsystems allow users to borrow a bike from a station and return it to another station whichbelongs to the same system.Citi Bike is the nation’s largest bike share program, with 14,500 bikes and nearly 900 sta-tions across Manhattan, Brooklyn, Queens and Jersey City.  In this report with the use ofR programming language, I will provide the summary of Citi Bike usage in Jersey Cityfor 2019.  I will provide statistics and data visualizations on details such as the number oftrips, demographics of riders, length of trips, and frequency of station and route usage.  I will also analyse the impact of external factors like temperature, precipitation and snow-fall. This report also talks about the cleaning and pre-processing steps performed using Rto convert the data in format that is useful for analysis. The goal of this analysis is to createan operating report of Citi Bike for the year of 2017.  Starting last year, Bike JC has run itsown annual analysis of the bike share system in order to provide information to the publicand promote discussion of biking and Citi Bike in our community.
+
+## About the data
+# 1.Citi bike data 
+For this project,  I have used the citi bike dataset for the Jersey city for year 2019 .   CitiBikes cannot pick up and drop off at any arbitrary point in the city.  Instead, riders canpick up and drop off bikes at finite number of stations across the city. Citi Bike makes dataavailable for every individual trip in the system. Each trip record includes:\n
+•Station locations for where the ride started and ended\n
+•Timestamps for when the ride started and ended\n
+•Rider gender•Rider birth year\n
+•Whether the rider is an annual Citi Bike subscriber or a short-term customer\n
+•A unique identifier for the bike used\n
+•Trip duration\n
+The dataset contains trip data for 404,947 trips.\n
+
+```{r,echo = FALSE}
+#Reading the data
+
+data1 <- read.csv("https://raw.githubusercontent.com/ampatil1996/Data-Wrangling-Project/master/JC-201901-citibike-tripdata.csv")
+data2 <- read.csv("https://raw.githubusercontent.com/ampatil1996/Data-Wrangling-Project/master/JC-201902-citibike-tripdata.csv")
+data3 <- read.csv("https://raw.githubusercontent.com/ampatil1996/Data-Wrangling-Project/master/JC-201903-citibike-tripdata.csv")
+data4 <- read.csv("https://raw.githubusercontent.com/ampatil1996/Data-Wrangling-Project/master/JC-201904-citibike-tripdata.csv")
+data5 <- read.csv("https://raw.githubusercontent.com/ampatil1996/Data-Wrangling-Project/master/JC-201905-citibike-tripdata.csv")
+data6 <- read.csv("https://raw.githubusercontent.com/ampatil1996/Data-Wrangling-Project/master/JC-201906-citibike-tripdata.csv")
+data7 <- read.csv("https://raw.githubusercontent.com/ampatil1996/Data-Wrangling-Project/master/JC-201907-citibike-tripdata.csv")
+data8 <- read.csv("https://raw.githubusercontent.com/ampatil1996/Data-Wrangling-Project/master/JC-201908-citibike-tripdata.csv")
+data9 <- read.csv("https://raw.githubusercontent.com/ampatil1996/Data-Wrangling-Project/master/JC-201909-citibike-tripdata.csv")
+data10 <- read.csv("https://raw.githubusercontent.com/ampatil1996/Data-Wrangling-Project/master/JC-201910-citibike-tripdata.csv")
+data11 <- read.csv("https://raw.githubusercontent.com/ampatil1996/Data-Wrangling-Project/master/JC-201911-citibike-tripdata.csv")
+data12 <- read.csv("https://raw.githubusercontent.com/ampatil1996/Data-Wrangling-Project/master/JC-201912-citibike-tripdata.csv")
+
+final_data <- do.call(rbind,list(data1,data2,data3,data4,data5,data6,data7,data8,data9,data10,data11,data12))
+
+
+#data <- read.csv("C:/Users/Amit/Desktop/MS in Data Science/Sem4/Data  Wrangling/Project/NJ Data/Combined_data.csv")
+
+df1 <- final_data
+
+#sample of data
+#head(df1,5)
+```
+
+# Some Data prepocessing for citi bike data
+
+As a part of preprocessing, firstly I changed the column names and selected only the limited columns which are most useful for analysis. Then I converted the start_stn_name and and end_stn_name to character type. The start_time attribute has the values in format "Date Time"("2019-01-01 03:09:09.7110").
+So using seperate() function from 'stringr' package I seperated the column into 2 columns which are start_date and start_time.
+Then I changed the start_date column to date format using ymd() function from lubridate package.
+
+```{r,echo = FALSE}
+
+colnames(df1) <- c("trip_duration","start_time","stop_time","start_stn_id","start_stn_name","start_stn_lat",
+                   "start_stn_long","end_stn_id","end_stn_name","end_stn_lat","end_stn_lang","bike_id",
+                   "user_type","birth_year","gender")
+
+df1 <- df1 %>% select("trip_duration","start_time","start_stn_name","end_stn_name","bike_id","user_type","birth_year","gender")
+
+df1$start_stn_name = as.character(df1$start_stn_name)
+df1$end_stn_name = as.character(df1$end_stn_name)
+
+##Since start time is in format 2019-01-01 03:09:09.7110 we will seperate start_time into start_date and start_time
+df1 <- df1 %>% separate(start_time,c("start_date","start_time"),sep = " ")
+class(df1$start_date)
+df1$start_date  <- ymd(df1$start_date)
+
+head(df1,5)
+```
+
+# Weather data collection using api
+
+To study the impact of weather on citi bike trips, I also collected the weather data.I collected the past weather data from world weather online website using their API.  World Weather Online’s weather API (application programming interface) allows developers and programmers to access current, past and future weather data foruse in apps and on websites. They provide API-Key free for first 6 months from the time you signup. The API returns weather elements such as temperature,  precipitation (rainfall),  weather de-scription, weather icon and wind speed. The only problem with this api is that,in a single url request, you can pass the start and end date only for the same month. So, to collect data for 1 year we have to create the seperate request url for each month.  To ease this process, I created a function called create_weather_data which will create the weather dataframe for year 2019.
+create_weather_data function contains two arguments, first is API_key and other is default argument which is is list having 12 elements with numbers equal to no. of days in each month.
+The request url contains various parametes like the location, the format in which we need result to be returned and start date,end date. I create a proper url for retriving the data for each month. And using fromJSON() function I read the data from url and convert it to dataframe. Lastly I append the datafrmae to the list. And I return this list. In do.call() function I pass first parameter as rbind function and second parameter in create_weather_data function.
+This line of code will will combine the all the dataframes in the list.
+
+```{r }
+create_weather_data <- function(api.key,li =  c(31,28,31,30,31,30,31,31,30,31,30,31))
+{
+  datalist = list()
+  for(i in c(1:9))
+  {
+    url <- paste0("http://api.worldweatheronline.com/premium/v1/past-weather.ashx?key=",
+                  api.key,"&q=Jersey%20City&format=json&date=2019-0",i,"-01&enddate=2019-0",i,"-",li[i],"&includelocation=yes&tp=24")
+    temp <- url %>% fromJSON() %>% as.data.frame()
+    datalist[[i]] = temp
+      
+  }
+  for(i in c(10:12))
+  {
+    url <- paste0("http://api.worldweatheronline.com/premium/v1/past-weather.ashx?key=",
+                  api.key,"&q=Jersey%20City&format=json&date=2019-",i,"-01&enddate=2019-",i,"-",li[i],"&includelocation=yes&tp=24")
+    temp <- url %>% fromJSON() %>% as.data.frame()
+    datalist[[i]] = temp
+    
+  }
+  datalist
+}
+
+weather_data_created_by_function <- do.call(rbind,create_weather_data(api.key))
+
+```
+
+Here from weather dataframe, we first select only the required columns. Then I have extracted precipitation values for 365 days into vector.And I have appended the precipitation column to weather data.
+Lastly, we merge the weather data with citi bike data. And also converted the variuos columns into approprite data types.
+
+```{r}
+weather_data <- weather_data_created_by_function
+
+weather_data_select <- weather_data %>% select(data.weather.date,data.weather.maxtempF,data.weather.avgtempF,data.weather.totalSnow_cm)
+
+arr <- weather_data['data.weather.hourly'][[1]][[1]][['precipInches']]
+i = 2
+while(i <= 365)
+{
+  arr[[i]] <- weather_data['data.weather.hourly'][[1]][[i]][['precipInches']]
+  i <- i + 1
+}
+arr
+weather_data_select['precip_in_inches'] = arr
+
+colnames(weather_data_select) <- c('date','maxtemp','avgtemp','snow_in_cm','precipinches')
+
+weather_data_select$date <- as.Date(weather_data_select$date)
+
+df1 <-inner_join(df1,weather_data_select, by= c("start_date"="date"))
+df1$avgtemp <- as.numeric(df1$avgtemp)
+df1$maxtemp <- as.numeric(df1$maxtemp)
+df1$snow_in_cm <- as.numeric(df1$snow_in_cm)
+df1$precipinches <- as.numeric(df1$precipinches)
+
+```
+
+## Analysis:
+
+# Overall Usage: 
+
+As we can see from the plot, biking follows a seasonal pattern and breaking down total number of trips by month will show if this increase is uniform or concentrated during certain periods.As we can see, the greatest number of trips occurred in May through October, peaking in september (with 49K trips). Not surprisingly, these months have the best weather for biking. As we can see there are less number of trips in winter and at the early spring. We will later in this report will see the impact of weather on trips
+
+
+```{r pressure, echo=FALSE}
+
+#Distribution of bikes over the year
+
+new_data <- df1
+head(new_data,5)
+
+#class(new_data$Month)
+new_data$Month <- format(new_data$start_date, "%Y-%m")
+
+temp_new_data <- new_data %>% group_by(Month) %>% summarise(n= n())
+temp_new_data$Month <- as.Date(paste(temp_new_data$Month,"-01",sep=""))
+temp_new_data$Month <- as.Date(temp_new_data$Month,"%Y-%m-%d")
+ 
+temp_new_data %>% ggplot(aes(x = Month,y = n)) + 
+ geom_line() + geom_point()+ ggtitle("Overall usage") + xlab("Time") + 
+  ylab("Total Trips") + geom_smooth() 
+
+#new_data <- df1
+
+#plot2 <- df1 %>% group_by(start_date) %>% summarise(total_trips = n()) %>% ggplot(aes(x #= start_date,y = total_trips)) + 
+#     geom_smooth(color = "#8968CD") + ggtitle("Overall usage") +
+#    xlab("Time") + ylab("Total Trips") 
+
+
+#plot2
+
+```
+
+# Top 5 stations with most starts:
+
+Firstly, I perfomed group by on start station and counted the occurances. Then I ordered the dataframe in descending order based on number of trips. Lastly plotted the results.This information is very important for the bike shating company so that they can provide sufficient number of bikes in advance to the busiest stations.
+
+```{r,echo = FALSE}
+
+top_starts <- df1 %>% group_by(start_stn_name) %>% summarise(total = n()) %>% top_n(5,total)
+
+top_starts <- top_starts[order(-top_starts$total),]
+
+plot1 <- ggplot(data = top_starts,aes(x = start_stn_name,y=total)) + 
+  geom_bar(stat = "identity",fill="#8470FF") + 
+  geom_text(aes(label=total), vjust=1.6, color="white", size=3.5)+
+  ggtitle("Top 5 stations with with most starts") + xlab("Station names") + ylab("Total Trips") + theme(axis.text.x = element_text(angle = 60)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  theme(plot.title = element_text(color="#696969", size=14, face="bold.italic"),
+        axis.title.x = element_text(color="#1C1C1C", size=12, face="bold"),
+        axis.title.y = element_text(color="#1C1C1C", size=12, face="bold"),
+        axis.text.x = element_text(size=10),
+        axis.text.y = element_text(size=9))
+
+plot1 + scale_x_discrete(limits=c('Grove St PATH','Hamilton Park','Sip Ave','Harborside','Newport PATH'))
+
+```
+
+# Most popular trips:
+
+To get most popular trips, the most convenient way to do this is by using the groupby function in R . I performed the group by on start_stn_name and end_stn_name together and counted the rows. I ordered the the resulr from prev step in descending order of trips Laslty plotted the top 10 popular trips using ggplot.
+
+```{r,echo = FALSE}
+
+popular_trips <- df1 %>% group_by(start_stn_name,end_stn_name) %>% summarise(total = n())
+
+popular_trips <- popular_trips[order(-popular_trips$total),]
+
+popular_trips$trips <- paste(popular_trips$start_stn_name,popular_trips$end_stn_name,sep = " to ")
+
+plot4 <- popular_trips[1:10,] %>% ggplot(aes(x = trips, y = total)) + geom_bar(stat = "identity") +
+  ggtitle("Most Popular Trips") + xlab("Trips") + ylab("Total") +  
+  theme(plot.title = element_text(color="steelblue", size=14, face="bold.italic"),
+        axis.title.x = element_text(color="#993333", size=14, face="bold"),
+        axis.title.y = element_text(color="#993333", size=14, face="bold"),
+        axis.text.x = element_text(size=10),
+        axis.text.y = element_text(face="bold", size=9))+
+            coord_flip()  
+
+plot4 + scale_x_discrete(limits=c("McGinley Square to Sip Ave","Dixon Mills to Grove St PATH","Monmouth and 6th to Grove St PATH",
+                                  "Brunswick St to Grove St PATH","Grove St PATH to Marin Light Rail",
+                                  "Jersey & 6th St to Grove St PATH","Marin Light Rail to Grove St PATH",
+                                  "Brunswick & 6th to Grove St PATH","Grove St PATH to Hamilton Park",
+                                  "Hamilton Park to Grove St PATH"))
+
+```
+
+# Avg trips by day of weeks:
+
+As we can see, Citi Bike trips peaked on Wednesdays. The number of trips drops off through the weekend. Lowest average use was on Sundays.
+To create the plot, firstly I appended the day of week using the weekdays() function.
+Then I counted the trips for each weekday and then calculated the Average trips and using mutate() appended this new column the  to the dataframe. Then plotted the result using ggplot().
+
+
+```{r,echo = FALSE}
+
+df1$day_of_week <- weekdays(df1$start_date)
+
+temp <- df1 %>% group_by(day_of_week) %>% summarise(count = n())
+
+avg_day_of_week <- df1 %>% group_by(start_date,day_of_week) %>% 
+  summarise(n = n()) %>% group_by(day_of_week) %>% summarise(days_count = n())
+
+avg_day_of_week_final <- inner_join(temp,avg_day_of_week) %>% mutate(avg_count = count/days_count)
+
+avg_day_of_week_final$day_of_week <- factor(avg_day_of_week_final$day_of_week, levels=c("Monday", "Tuesday", "Wednesday", "Thursday", 
+                                         "Friday", "Saturday", "Sunday"))
+#avg_day_of_week_final[order(avg_day_of_week_final$day_of_week),]
+#avg_day_of_week_final$day_of_week <- as.character(avg_day_of_week_final$day_of_week)
+
+avg_day_of_week_final %>% ggplot(aes(x = day_of_week,y = avg_count,group = 1)) + 
+    geom_line(color = "#6495ED",size=0.72) + 
+    ylim(600,1500) +
+    ggtitle("Average Trips by Day of Week") + xlab("Day of week") + ylab("Avg. trips")
+
+##########
+
+```
+
+# Average trips by time of day:
+
+The system gets more usage on weekdays than on weekends, and if we look at trips by hour of the day, we can see that weekday riders primarily use Citi Bikes to commute to and from work, with peak hours from 8–9 AM and 5–7 PM. Weekend riders, on the other hand, prefer a more leisurely schedule, with most weekend rides occurring in the mid afternoon hours:
+
+
+```{r,echo = FALSE}
+########
+
+df2 <- df1 %>% separate(start_time,c("start_hr"), sep = ":")
+df2$start_hr <- as.numeric(df2$start_hr)
+#typeof(df2$day_of_week)
+
+weekdays <- df2%>% filter(day_of_week == "Monday" | day_of_week == "Tuesday" | day_of_week == "Wednesday" | day_of_week == "Thursday" | day_of_week == "Friday")
+weekdays <- weekdays %>% group_by(start_hr) %>% summarise(hourly_count = n())
+weekdays <- weekdays %>% mutate(avg_count = hourly_count/261)
+weekdays$var <- "work days"
+  
+weekends <- df2%>% filter(day_of_week == "Saturday" | day_of_week == "Sunday")
+weekends <- weekends %>% group_by(start_hr) %>% summarise(hourly_count = n())
+weekends <- weekends %>% mutate(avg_count = hourly_count/104)
+weekends$var <- "weekends" 
+
+combined <- rbind(weekdays,weekends)
+
+plot3 <- combined %>% ggplot(aes(x = start_hr,y = avg_count,col = var)) +
+            geom_line(size =0.72) + scale_x_continuous(breaks=seq(0,23,2),labels=c("00:00", "02:00","04:00","06:00",
+                                                                                   "08:00","10:00","12:00","14:00","16:00","18:00","20:00","22:00")) + 
+            ggtitle("Average Trips by time of day 2019")+
+            xlab("Time") + ylab("Average Trips")+
+            scale_color_brewer(palette="Dark2") + theme(legend.position="right")
+    
+
+plot3
+  
+##########
+
+```
+
+#User type:
+
+As we can see there are two types of users in the citi bike system. Customers and Subscribers. daily or weekly pass belongs to subscriber category. Annual pass users belongs to subscriber category.
+
+```{r,echo = FALSE}
+
+#df1 %>% group_by(user_type) %>% summarise(n = n())
+
+plt <- df1 %>% ggplot(aes(x=user_type,fill=user_type)) + geom_bar(alpha=.7)+theme(legend.position="none")+ggtitle(expression(atop("UserType Distribution",atop("Customer = 24 hour/7 Day pass  | Subscriber = Annual Pass")))) + scale_fill_brewer(palette="Set2")+annotate("text",x="Subscriber",y=350000,label="87% are Subscribers")+
+  ylim(0,400000)
+library(scales)
+plt + scale_y_continuous(labels = comma)
+```
+
+# Age wise distribution of data:
+
+The data contains the birth year of the user. I first calculated the current age of user and plotted the histogram. As we can see most of the user are of 25 to 40 age. 
+
+```{r,echo = FALSE}
+
+Age_df <- df1
+#typeof(Age_df$birth_year)
+Age_df <- Age_df %>% mutate(Age = 2020 - Age_df$birth_year)
+
+Age_plot <- ggplot(Age_df, aes(x=Age)) + 
+  geom_histogram(binwidth = 2,colour="black", fill="steelblue")+
+  geom_density(alpha=.2, fill="#FF6666")+ scale_x_continuous(breaks = seq(0, 120, by = 20)) + theme_bw()
+
+
+Age_plot
+```
+
+#Gender and age wise trip percentage:
+
+The largest share of city bike trips are taken by men age 25 to 34 (33%) followed by men age 35 to 44 (25%).
+While a majority of riders are younger and male, this table also reflects the diversity of the riders that rely on bike share. Women age 25 to 34 are the third largest share of trips (11%).  Also nearly 10% of riders are over 55.
+
+I converted the age into 5 groups using case_when statment. Then converted the age group variable in to factor. Then using filter and groupby functions counted the age group wise and gender wise trip percentage and plotted it.
+
+```{r,echo = FALSE}
+
+Age_df_cat <- Age_df %>% mutate(Age_group =  
+  case_when(
+  (Age >= 17 & Age < 25) ~ 1,
+  (Age >= 25 & Age < 35) ~ 2,
+  (Age >= 35 & Age < 45) ~ 3,
+  (Age >= 45 & Age < 55) ~ 4,
+  TRUE ~ 5
+))
+
+#class(Age_df_cat$Age_group)
+Age_df_cat$Age_group <- as.factor(Age_df_cat$Age_group)
+
+total_count <- Age_df_cat %>% filter(gender == 1 | gender == 2) %>% nrow()
+
+group_data <-Age_df_cat %>% filter(gender == 1 | gender == 2) %>% group_by(gender,Age_group) %>% summarise(n = n())
+
+group_data <- group_data %>% mutate(percent = n/total_count*100)
+
+group_data$gender[group_data$gender == 1] <- "Male"
+group_data$gender[group_data$gender == 2] <- "Female"
+
+Age_df_cat$gender <- as.factor(Age_df_cat$gender)
+
+basic <- ggplot(group_data, aes(fill=gender, y=percent, x=Age_group)) + 
+  geom_bar(position="stack", stat="identity") + xlab("Age group") + ylab("Percentage") 
+ 
+
+basic + scale_x_discrete(labels=c("1" = "17-24", "2" = "25-34", "3" = "35-44", "4" = "45-54", "5" = "55 and up"))
+```
+
+# Distribution of tripdurations:
+The following chart will be a histogram representing the distribution of trip times. 
+Conveted the trip duration in seconds to minute and plotted the distribution.
+The height of each bar represents the number of trips that fall within the time range on the x-axis. An example to help you interpret the data, the height of the first bar can be read as the number of trips that took more than one minute, but less than two minutes.
+The distribution is concentrated on the left side of the chart, meaning most trips are shorter. The greatest proportion of trips lasts between 4 and 5 minutes and 42% of trips are 5 minutes or less.
+Only about 12% of trips are longer than 15 minutes.
+
+```{r,echo = FALSE}
+
+trip_time_min <- df1 %>% select(trip_duration) %>% mutate(trip_in_mins = trip_duration/60)
+
+(trip_time_min[trip_time_min$trip_in_mins < 40,]) %>% ggplot(aes(x = trip_in_mins)) + geom_histogram(binwidth = 0.8,color = "black",fill = "steelblue") +
+  scale_x_continuous(breaks=seq(0,30,2)) + ggtitle("Distribution of Trip Times") + xlab("Trip Duration(minutes)") +
+  ylab("Number of Trips")
+```
+
+# Effect of temperature on no. of trips:
+We saw earlier that there are many more Citi Bike rides in the summer than in the winter.
+The number of trips ramps up quickly between 30 and 75 degrees. After that there is decrease in the use of bikes.
+
+
+```{r,echo = FALSE}
+######### 10) Effect of weather on temprature 
+#weather <- weather_data_created_by_function
+
+#weather <- weather %>% select(data.weather.date,data.weather.avgtempF)
+
+#weather$data.weather.date  <- ymd(weather$data.weather.date)
+
+
+#df1_with_weather <- df1
+
+#df1_with_weather$avgtemp <- as.numeric(df1_with_weather$avgtemp)
+
+#df1_with_weather %>% ggplot(aes(x = maxtemp)) + 
+ # geom_density(fill="#69b3a2", color="#e9ecef", alpha=0.8) +
+  #ggtitle("Effect of weather on bike trips") + xlab("Avg. Temprature") + 
+  #theme_ipsum()
+
+trips_by_temperature = df1 %>%
+  filter(precipinches == 0 & snow_in_cm == 0) %>%
+  mutate(temperature_bucket = floor(avgtemp / 10) * 5) %>%
+  group_by(temperature_bucket) %>%
+  summarize(avg_max_temperature = mean(avgtemp),
+            count = n())
+
+trips_by_temperature %>% ggplot(aes(x = avg_max_temperature,y = count)) + geom_line(color = "steelblue",size = 0.72) +
+  ggtitle("Avg Temp vs Total trips") + xlab("Avg Temperature(°F)") + ylab('Total trips')+
+  theme_bw()
+  
+
+```
+
+# Effect of precipitation:
+As we can see, rain not surprisingly, correlated with lower ridership. The linearity of the relationships is less clear as there are also fewer observations in the dataset compared to “normal” days.
+But intuitively I believe that there’s a diminishing marginal effect of both, i.e. the difference between no rain and 0.1 inches of rain is more significant than the difference between 0.5 and 0.6 inches.
+
+
+```{r,echo = FALSE}
+trips_by_precipitation = df1 %>%
+  mutate(precip_bucket = cut(precipinches, c(0, 0.001, 0.1, 0.2, 0.4, 0.6, 0.8, 1, 2,4), right = FALSE)) %>%
+  group_by(precip_bucket) %>%
+  summarize(
+            avg_precip = mean(precipinches),
+            count = n())
+
+trips_by_precipitation %>% ggplot(aes(x = avg_precip,y = count)) + 
+  geom_line(color = "steelblue",size=0.72) + ggtitle("Precipitation vs no. of trips") +xlab("Precipitation in Inches") +
+  ylab("Total trips") + theme_bw()
+
+```
+
